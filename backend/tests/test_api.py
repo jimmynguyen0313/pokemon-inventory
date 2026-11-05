@@ -156,3 +156,25 @@ def test_price_series_is_deterministic_and_ends_at_current_price():
     assert a[today] == 100.0
     assert len(a) == 25
     assert min(price_series("y", 100.0, "2026-06-15", today)) >= date(2026, 6, 15)
+
+
+# ── CORS ─────────────────────────────────────────────────────────────────
+
+@pytest.mark.parametrize("raw,expected", [
+    ("https://jimmynguyen0313.github.io", ["https://jimmynguyen0313.github.io"]),
+    ("https://jimmynguyen0313.github.io/", ["https://jimmynguyen0313.github.io"]),
+    ("https://jimmynguyen0313.github.io/pokemon-inventory/", ["https://jimmynguyen0313.github.io"]),
+    ("jimmynguyen0313.github.io", ["https://jimmynguyen0313.github.io"]),
+    (' "https://A.github.io" , http://localhost:3000 ,,', ["https://a.github.io", "http://localhost:3000"]),
+    ("", []),
+])
+def test_parse_origins_normalizes(raw, expected):
+    from backend.app import parse_origins
+    assert parse_origins(raw) == expected
+
+
+def test_cors_allows_configured_origin(client):
+    ok = client.get("/health", headers={"Origin": "http://localhost:3000"})
+    assert ok.headers.get("access-control-allow-origin") == "http://localhost:3000"
+    blocked = client.get("/health", headers={"Origin": "https://evil.example"})
+    assert "access-control-allow-origin" not in blocked.headers

@@ -10,6 +10,7 @@ from backend import analytics, demo_data
 from contextlib import asynccontextmanager
 from datetime import datetime
 import os
+from urllib.parse import urlsplit
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -29,11 +30,21 @@ app = FastAPI(title="Pokemon Sealed Inventory API", lifespan=lifespan)
 
 # Comma-separated list of frontend origins allowed to call the API,
 # e.g. ALLOWED_ORIGINS="https://my-portfolio.vercel.app". Defaults to the local dev server.
-ALLOWED_ORIGINS = [
-    o.strip()
-    for o in os.getenv("ALLOWED_ORIGINS", "http://localhost:3000").split(",")
-    if o.strip()
-]
+def parse_origins(raw: str) -> list[str]:
+    """Normalize to scheme://host[:port]; browsers send the origin without a path or trailing slash,
+    so "https://user.github.io/app/" must become "https://user.github.io" to match."""
+    origins = []
+    for value in raw.split(","):
+        value = value.strip().strip('"').strip("'")
+        if not value:
+            continue
+        parts = urlsplit(value if "://" in value else f"https://{value}")
+        origin = f"{parts.scheme}://{parts.netloc}".lower()
+        if parts.netloc and origin not in origins:
+            origins.append(origin)
+    return origins
+
+ALLOWED_ORIGINS = parse_origins(os.getenv("ALLOWED_ORIGINS", "http://localhost:3000"))
 
 app.add_middleware(
     CORSMiddleware,
