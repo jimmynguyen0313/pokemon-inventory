@@ -145,24 +145,26 @@ The application uses an optimized SQLite database with:
 
 ## 📝 Environment Variables
 
-Create a `.env` file in the backend directory:
+See [`.env.example`](.env.example) for the full list.
 
-```env
-POKEMON_PRICE_TRACKER_API_KEY=your_api_key_here
-```
+| Variable | Used by | Default | Purpose |
+|---|---|---|---|
+| `REACT_APP_API_URL` | Frontend (build time) | `http://localhost:8000` | URL of the FastAPI backend |
+| `ALLOWED_ORIGINS` | Backend | `http://localhost:3000` | Comma-separated frontend origins allowed by CORS |
+| `POKEMON_PRICE_TRACKER_API_KEY` | Backend | — | Only needed to sync live prices |
+
+The backend reads these from the process environment (it does not load a `.env` file), so `export` them in your shell or set them in your hosting provider's dashboard.
 
 ## 🚀 Deployment
 
 ### Frontend (Vercel/Netlify)
-```bash
-npm run build
-# Deploy the build/ directory
-```
+- Set `REACT_APP_API_URL` to your deployed backend URL. CRA bakes it in at build time, so redeploy after changing it.
+- Build command `npm run build`, publish directory `build/`.
 
 ### Backend (Railway/Render)
-- Set `POKEMON_PRICE_TRACKER_API_KEY` environment variable
-- Deploy the backend/ directory
-- Run `python db_init.py` on first deployment
+- Set `ALLOWED_ORIGINS` to your frontend URL (e.g. `https://your-app.vercel.app`).
+- Optionally set `POKEMON_PRICE_TRACKER_API_KEY` for live price syncing.
+- Run `python db_init.py` (and optionally the seed script) on first deployment.
 
 ## 📄 License
 

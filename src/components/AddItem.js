@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { API_BASE } from '../config';
 import './AddItem.css';
 
 export default function AddItem({ selectedProduct, onItemAdded }) {
@@ -12,7 +13,7 @@ export default function AddItem({ selectedProduct, onItemAdded }) {
 
   // Fetch categories on component mount
   useEffect(() => {
-    fetch('http://localhost:8000/categories')
+    fetch(`${API_BASE}/categories`)
       .then(res => res.json())
       .then(data => {
         setCategories(data);
@@ -41,7 +42,7 @@ export default function AddItem({ selectedProduct, onItemAdded }) {
     setSuccess('');
 
     try {
-      const response = await fetch('http://localhost:8000/items', {
+      const response = await fetch(`${API_BASE}/items`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -4,15 +4,23 @@ from backend.models import ItemCreate, ProductCreate, CategoryCreate, Category
 from backend.database import get_db
 from backend.pokemon_api import fetch_products, get_product_by_id, sync_products_to_db
 from datetime import datetime
+import os
 
 app = FastAPI(title="Pokemon Sealed Inventory API")
 
+# Comma-separated list of frontend origins allowed to call the API,
+# e.g. ALLOWED_ORIGINS="https://my-portfolio.vercel.app". Defaults to the local dev server.
+ALLOWED_ORIGINS = [
+    o.strip()
+    for o in os.getenv("ALLOWED_ORIGINS", "http://localhost:3000").split(",")
+    if o.strip()
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=ALLOWED_ORIGINS,
+    allow_methods=["GET", "POST", "DELETE"],
+    allow_headers=["Content-Type"],
 )
 
 # ============ Product Endpoints ============
