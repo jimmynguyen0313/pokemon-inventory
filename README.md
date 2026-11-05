@@ -149,6 +149,10 @@ Render's free disk is ephemeral, so the demo collection is recreated on each dep
 2. In **Settings → Secrets and variables → Actions → Variables**, add `REACT_APP_API_URL` with the API URL.
 3. Push to `main`. [`deploy-pages.yml`](.github/workflows/deploy-pages.yml) tests, builds and publishes the site.
 
+## License
+
+[MIT](LICENSE)
+
 ---
 
 Pokémon is a trademark of The Pokémon Company International. This project is not affiliated with or endorsed by it. Demo prices are illustrative, not market data.

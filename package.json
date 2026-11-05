@@ -2,6 +2,7 @@
   "name": "pokemon-inventory",
   "version": "0.1.0",
   "private": true,
+  "license": "MIT",
   "homepage": "https://jimmynguyen0313.github.io/pokemon-inventory",
   "dependencies": {
     "@testing-library/dom": "^10.4.0",
