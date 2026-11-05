@@ -1,8 +1,19 @@
-import { render, screen } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
 import App from './App';
 
-test('renders learn react link', () => {
-  render(<App />);
-  const linkElement = screen.getByText(/learn react/i);
-  expect(linkElement).toBeInTheDocument();
+beforeEach(() => {
+  global.fetch = jest.fn(() =>
+    Promise.resolve({ ok: true, json: () => Promise.resolve([]) })
+  );
+});
+
+afterEach(() => {
+  jest.resetAllMocks();
+});
+
+test('renders the app header', async () => {
+  await act(async () => {
+    render(<App />);
+  });
+  expect(screen.getByRole('heading', { name: /pokemon sealed inventory/i })).toBeInTheDocument();
 });

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { API_BASE } from '../config';
 import './ProductSearch.css';
 
 export default function ProductSearch({ onSelectProduct }) {
@@ -31,7 +32,7 @@ export default function ProductSearch({ onSelectProduct }) {
     setLoading(true);
     try {
       const response = await fetch(
-        `http://localhost:8000/products/search?name=${encodeURIComponent(query)}`
+        `${API_BASE}/products/search?name=${encodeURIComponent(query)}`
       );
       const data = await response.json();
       setResults(data);

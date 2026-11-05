@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { API_BASE } from '../config';
 import './InventoryList.css';
 
 export default function InventoryList({ refreshTrigger, onItemChanged }) {
@@ -14,7 +15,7 @@ export default function InventoryList({ refreshTrigger, onItemChanged }) {
     setLoading(true);
     setError('');
     try {
-      const response = await fetch('http://localhost:8000/items');
+      const response = await fetch(`${API_BASE}/items`);
       const data = await response.json();
       setItems(data);
     } catch (err) {
@@ -37,7 +38,7 @@ export default function InventoryList({ refreshTrigger, onItemChanged }) {
     }
 
     try {
-      const response = await fetch(`http://localhost:8000/items/${itemId}`, {
+      const response = await fetch(`${API_BASE}/items/${itemId}`, {
         method: 'DELETE',
       });
 

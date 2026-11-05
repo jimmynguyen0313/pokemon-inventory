@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { API_BASE } from '../config';
 import './PortfolioValue.css';
 
 export default function PortfolioValue({ refreshTrigger }) {
@@ -12,7 +13,7 @@ export default function PortfolioValue({ refreshTrigger }) {
   const fetchTotalValue = async () => {
     setLoading(true);
     try {
-      const response = await fetch('http://localhost:8000/total-value');
+      const response = await fetch(`${API_BASE}/total-value`);
       const data = await response.json();
       setTotalValue(data.total_value || 0);
     } catch (err) {

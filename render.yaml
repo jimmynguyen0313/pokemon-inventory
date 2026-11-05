@@ -1,0 +1,17 @@
+# Render Blueprint for the FastAPI backend (free tier).
+# In Render: New → Blueprint → select this repo.
+services:
+  - type: web
+    name: pokemon-inventory-api
+    runtime: python
+    plan: free
+    buildCommand: pip install -r backend/requirements.txt
+    startCommand: uvicorn backend.app:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.7
+      - key: ALLOWED_ORIGINS
+        value: https://jimmynguyen0313.github.io
+      - key: POKEMON_PRICE_TRACKER_API_KEY
+        sync: false
