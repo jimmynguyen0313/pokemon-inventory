@@ -3,7 +3,7 @@ Seed the database with popular Pokemon sealed products.
 This allows testing without relying on external APIs.
 """
 
-from database import get_db
+from backend.database import get_db
 from datetime import datetime
 
 POKEMON_PRODUCTS = [

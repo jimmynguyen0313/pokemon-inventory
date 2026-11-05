@@ -1,8 +1,10 @@
+import os
 import sqlite3
 from sqlite3 import Connection
 from pathlib import Path
 
-DB_PATH = Path(__file__).parent / "inventory.db"
+# Override with DATABASE_PATH to store the SQLite file elsewhere (e.g. a mounted disk).
+DB_PATH = Path(os.getenv("DATABASE_PATH", Path(__file__).parent / "inventory.db"))
 
 def get_db() -> Connection:
     conn = sqlite3.connect(DB_PATH)

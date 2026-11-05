@@ -7,8 +7,8 @@ Usage: python sync_products.py [--limit N]
 """
 
 import argparse
-from database import get_db
-from pokemon_api import sync_products_to_db
+from backend.database import get_db
+from backend.pokemon_api import sync_products_to_db
 
 def main():
     parser = argparse.ArgumentParser(description="Sync Pokemon products from TCG API")

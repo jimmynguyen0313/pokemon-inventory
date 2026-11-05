@@ -1,4 +1,4 @@
-from database import DB_PATH
+from backend.database import DB_PATH
 import sqlite3
 
 def init_db():

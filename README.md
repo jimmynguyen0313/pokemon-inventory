@@ -7,6 +7,8 @@ A full-stack web application for managing and tracking your Pokemon sealed produ
 ![SQLite](https://img.shields.io/badge/SQLite-3-orange.svg)
 ![Pokemon](https://img.shields.io/badge/Pokemon-TCG-yellow.svg)
 
+**[🔗 Live Demo](https://jimmynguyen0313.github.io/pokemon-inventory)** · the API runs on a free tier, so the first load can take about 30 seconds
+
 ## ✨ Features
 
 - **📦 Product Search**: Find Pokemon booster boxes, elite trainer boxes, and sealed products
@@ -48,35 +50,30 @@ cd pokemon-inventory
 ```
 
 ### 2. Backend Setup
+Run these from the project root:
 ```bash
-# Navigate to backend directory
-cd backend
-
 # Create virtual environment (recommended)
 python -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
 
 # Install Python dependencies
-pip install -r requirements.txt
+pip install -r backend/requirements.txt
 
-# Set your API key (replace with your actual key)
+# (Optional) Set your API key to sync live prices
 export POKEMON_PRICE_TRACKER_API_KEY=your_api_key_here
 # On Windows: set POKEMON_PRICE_TRACKER_API_KEY=your_api_key_here
 
-# Initialize database
-python db_init.py
-
-# (Optional) Seed with sample products
-python sync_products.py --limit 50
-
 # Start the backend server
-python -m uvicorn app:app --host 127.0.0.1 --port 8000 --reload
+# (creates the database and seeds sample products on first run)
+python -m uvicorn backend.app:app --host 127.0.0.1 --port 8000 --reload
+
+# (Optional) Pull more products from the Price Tracker API
+python -m backend.sync_products --limit 50
 ```
 
 ### 3. Frontend Setup
 ```bash
-# In a new terminal, navigate to project root
-cd pokemon-inventory
+# In a new terminal, from the project root
 
 # Install Node.js dependencies
 npm install
@@ -105,13 +102,17 @@ pokemon-inventory/
 │   ├── models.py           # Pydantic data models
 │   ├── database.py         # SQLite connection management
 │   ├── pokemon_api.py      # External API client
+│   ├── db_init.py          # Schema creation
+│   ├── seed_products.py    # Sample product data
 │   └── requirements.txt    # Python dependencies
 ├── src/                    # React frontend
 │   ├── components/         # Reusable UI components
 │   ├── App.js             # Main application component
 │   └── index.js           # Application entry point
 ├── public/                 # Static assets
-└── .github/               # GitHub configuration
+├── render.yaml             # Render deployment config
+└── .github/
+    ├── workflows/          # GitHub Pages deploy
     └── copilot-instructions.md  # AI assistant guidelines
 ```
 
@@ -151,20 +152,25 @@ See [`.env.example`](.env.example) for the full list.
 |---|---|---|---|
 | `REACT_APP_API_URL` | Frontend (build time) | `http://localhost:8000` | URL of the FastAPI backend |
 | `ALLOWED_ORIGINS` | Backend | `http://localhost:3000` | Comma-separated frontend origins allowed by CORS |
+| `DATABASE_PATH` | Backend | `backend/inventory.db` | Location of the SQLite file |
 | `POKEMON_PRICE_TRACKER_API_KEY` | Backend | — | Only needed to sync live prices |
 
 The backend reads these from the process environment (it does not load a `.env` file), so `export` them in your shell or set them in your hosting provider's dashboard.
 
 ## 🚀 Deployment
 
-### Frontend (Vercel/Netlify)
-- Set `REACT_APP_API_URL` to your deployed backend URL. CRA bakes it in at build time, so redeploy after changing it.
-- Build command `npm run build`, publish directory `build/`.
+The frontend is hosted on **GitHub Pages** and the API on **Render**'s free tier.
 
-### Backend (Railway/Render)
-- Set `ALLOWED_ORIGINS` to your frontend URL (e.g. `https://your-app.vercel.app`).
-- Optionally set `POKEMON_PRICE_TRACKER_API_KEY` for live price syncing.
-- Run `python db_init.py` (and optionally the seed script) on first deployment.
+### Backend (Render)
+1. In Render, choose **New → Blueprint** and select this repo. It reads [`render.yaml`](render.yaml).
+2. When the service is live, copy its URL (e.g. `https://pokemon-inventory-api.onrender.com`).
+
+On startup the API creates the database and seeds sample products. Render's free disk is ephemeral, so inventory data resets on each deploy or restart. Free services also sleep after 15 minutes of inactivity, so the first request can take about 30 seconds.
+
+### Frontend (GitHub Pages)
+1. In the repo, go to **Settings → Pages** and set **Source** to **GitHub Actions**.
+2. Go to **Settings → Secrets and variables → Actions → Variables** and add `REACT_APP_API_URL` with the Render URL.
+3. Push to `main` (or run the workflow manually). [`deploy-pages.yml`](.github/workflows/deploy-pages.yml) runs the tests, builds and publishes to `https://jimmynguyen0313.github.io/pokemon-inventory`.
 
 ## 📄 License
 

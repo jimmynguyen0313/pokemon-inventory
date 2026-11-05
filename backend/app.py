@@ -3,10 +3,25 @@ from fastapi.middleware.cors import CORSMiddleware
 from backend.models import ItemCreate, ProductCreate, CategoryCreate, Category
 from backend.database import get_db
 from backend.pokemon_api import fetch_products, get_product_by_id, sync_products_to_db
+from backend.db_init import init_db
+from backend.seed_products import seed_db
+from contextlib import asynccontextmanager
 from datetime import datetime
 import os
 
-app = FastAPI(title="Pokemon Sealed Inventory API")
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Create tables on startup and seed sample products into an empty database,
+    # so a fresh deploy (e.g. Render's ephemeral disk) works out of the box.
+    init_db()
+    conn = get_db()
+    product_count = conn.execute("SELECT COUNT(*) FROM products").fetchone()[0]
+    conn.close()
+    if product_count == 0:
+        seed_db()
+    yield
+
+app = FastAPI(title="Pokemon Sealed Inventory API", lifespan=lifespan)
 
 # Comma-separated list of frontend origins allowed to call the API,
 # e.g. ALLOWED_ORIGINS="https://my-portfolio.vercel.app". Defaults to the local dev server.
@@ -22,6 +37,11 @@ app.add_middleware(
     allow_methods=["GET", "POST", "DELETE"],
     allow_headers=["Content-Type"],
 )
+
+@app.get("/health")
+def health():
+    """Lightweight health check for the hosting platform."""
+    return {"status": "ok"}
 
 # ============ Product Endpoints ============
 
