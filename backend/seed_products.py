@@ -4,7 +4,7 @@ This allows testing without relying on external APIs.
 """
 
 from backend.database import get_db
-from datetime import datetime
+from datetime import date, datetime
 
 POKEMON_PRODUCTS = [
     {
@@ -13,7 +13,7 @@ POKEMON_PRODUCTS = [
         "product_type": "Booster Box",
         "market_value": 95.00,
         "description": "36 packs per box",
-        "images_url": "https://d2t6xzbnpc9v9w.cloudfront.net/images/ProductImages/pokemon/sv/sv04pt5_bb.png",
+        "images_url": None,
         "set_name": "Scarlet & Violet",
         "release_date": "2023-03-31"
     },
@@ -23,7 +23,7 @@ POKEMON_PRODUCTS = [
         "product_type": "Elite Trainer Box",
         "market_value": 35.00,
         "description": "1 booster pack",
-        "images_url": "https://d2t6xzbnpc9v9w.cloudfront.net/images/ProductImages/pokemon/sv/sv04pt5_etb.png",
+        "images_url": None,
         "set_name": "Crown Zenith",
         "release_date": "2023-11-03"
     },
@@ -33,7 +33,7 @@ POKEMON_PRODUCTS = [
         "product_type": "Booster Box",
         "market_value": 7500.00,
         "description": "36 packs - Vintage",
-        "images_url": "https://d2t6xzbnpc9v9w.cloudfront.net/images/ProductImages/pokemon/base/base1_bb.png",
+        "images_url": None,
         "set_name": "Base Set",
         "release_date": "1999-01-09"
     },
@@ -43,7 +43,7 @@ POKEMON_PRODUCTS = [
         "product_type": "Booster Box",
         "market_value": 2800.00,
         "description": "36 packs - Vintage",
-        "images_url": "https://d2t6xzbnpc9v9w.cloudfront.net/images/ProductImages/pokemon/jungle/jungle_bb.png",
+        "images_url": None,
         "set_name": "Jungle",
         "release_date": "1999-06-16"
     },
@@ -53,7 +53,7 @@ POKEMON_PRODUCTS = [
         "product_type": "Booster Box",
         "market_value": 85.00,
         "description": "36 packs",
-        "images_url": "https://d2t6xzbnpc9v9w.cloudfront.net/images/ProductImages/pokemon/swsh/swsh1_bb.png",
+        "images_url": None,
         "set_name": "Sword & Shield",
         "release_date": "2020-02-07"
     },
@@ -63,7 +63,7 @@ POKEMON_PRODUCTS = [
         "product_type": "Booster Box",
         "market_value": 92.00,
         "description": "36 packs",
-        "images_url": "https://d2t6xzbnpc9v9w.cloudfront.net/images/ProductImages/pokemon/swsh/swsh8pt5_bb.png",
+        "images_url": None,
         "set_name": "Brilliant Stars",
         "release_date": "2022-02-25"
     },
@@ -73,7 +73,7 @@ POKEMON_PRODUCTS = [
         "product_type": "Booster Box",
         "market_value": 98.00,
         "description": "36 packs",
-        "images_url": "https://d2t6xzbnpc9v9w.cloudfront.net/images/ProductImages/pokemon/sv/sv02_bb.png",
+        "images_url": None,
         "set_name": "Paldea Evolved",
         "release_date": "2023-06-09"
     },
@@ -83,7 +83,7 @@ POKEMON_PRODUCTS = [
         "product_type": "Booster Box",
         "market_value": 96.00,
         "description": "36 packs",
-        "images_url": "https://d2t6xzbnpc9v9w.cloudfront.net/images/ProductImages/pokemon/sv/sv04_bb.png",
+        "images_url": None,
         "set_name": "Obsidian Flames",
         "release_date": "2023-08-18"
     },
@@ -93,7 +93,7 @@ POKEMON_PRODUCTS = [
         "product_type": "Booster Box",
         "market_value": 95.00,
         "description": "36 packs",
-        "images_url": "https://d2t6xzbnpc9v9w.cloudfront.net/images/ProductImages/pokemon/sv/sv05_bb.png",
+        "images_url": None,
         "set_name": "Temporal Forces",
         "release_date": "2024-01-12"
     },
@@ -103,9 +103,59 @@ POKEMON_PRODUCTS = [
         "product_type": "Booster Box",
         "market_value": 95.00,
         "description": "36 packs",
-        "images_url": "https://d2t6xzbnpc9v9w.cloudfront.net/images/ProductImages/pokemon/sv/sv06_bb.png",
+        "images_url": None,
         "set_name": "Twilight Masquerade",
         "release_date": "2024-05-24"
+    },
+    {
+        "id": "evolving-skies-booster-box",
+        "name": "Pokémon Evolving Skies Booster Box",
+        "product_type": "Booster Box",
+        "market_value": 780.00,
+        "description": "36 packs",
+        "images_url": None,
+        "set_name": "Evolving Skies",
+        "release_date": "2021-08-27"
+    },
+    {
+        "id": "sv151-booster-bundle",
+        "name": "Pokémon Scarlet & Violet 151 Booster Bundle",
+        "product_type": "Booster Bundle",
+        "market_value": 52.00,
+        "description": "6 packs",
+        "images_url": None,
+        "set_name": "Scarlet & Violet 151",
+        "release_date": "2023-09-22"
+    },
+    {
+        "id": "surging-sparks-booster-bundle",
+        "name": "Pokémon Surging Sparks Booster Bundle",
+        "product_type": "Booster Bundle",
+        "market_value": 38.00,
+        "description": "6 packs",
+        "images_url": None,
+        "set_name": "Surging Sparks",
+        "release_date": "2024-11-08"
+    },
+    {
+        "id": "prismatic-evolutions-elite-trainer-box",
+        "name": "Pokémon Prismatic Evolutions Elite Trainer Box",
+        "product_type": "Elite Trainer Box",
+        "market_value": 110.00,
+        "description": "9 packs",
+        "images_url": None,
+        "set_name": "Prismatic Evolutions",
+        "release_date": "2025-01-17"
+    },
+    {
+        "id": "charizard-ultra-premium-collection",
+        "name": "Pokémon Charizard Ultra-Premium Collection",
+        "product_type": "Premium Collection",
+        "market_value": 260.00,
+        "description": "16 packs plus promos",
+        "images_url": None,
+        "set_name": "Sword & Shield",
+        "release_date": "2022-10-07"
     },
 ]
 
@@ -133,6 +183,12 @@ def seed_db():
             now,
         ))
     
+        # Record today's price so value-over-time charts have a current point.
+        cursor.execute(
+            "INSERT OR REPLACE INTO price_history (product_id, recorded_on, market_value) VALUES (?, ?, ?)",
+            (product["id"], date.today().isoformat(), product["market_value"]),
+        )
+
     conn.commit()
     conn.close()
     print(f"✅ Seeded {len(POKEMON_PRODUCTS)} products!")

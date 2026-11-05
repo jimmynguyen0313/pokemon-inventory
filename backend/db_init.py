@@ -1,8 +1,9 @@
-from backend.database import DB_PATH
 import sqlite3
 
+from backend import database
+
 def init_db():
-    conn = sqlite3.connect(DB_PATH)
+    conn = sqlite3.connect(database.DB_PATH)
     conn.execute("PRAGMA foreign_keys = ON")  # Enforce foreign key constraints
     
     # Categories lookup table - normalize category data
@@ -47,6 +48,17 @@ def init_db():
     )
     """)
     
+    # Price history - one market price per product per day, used for value-over-time analytics
+    conn.execute("""
+    CREATE TABLE IF NOT EXISTS price_history (
+        product_id TEXT NOT NULL,
+        recorded_on DATE NOT NULL,
+        market_value REAL NOT NULL CHECK(market_value >= 0),
+        PRIMARY KEY (product_id, recorded_on),
+        FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
+    )
+    """)
+
     # Composite indexes for common query patterns
     conn.execute("CREATE INDEX IF NOT EXISTS idx_products_name ON products(name)")
     conn.execute("CREATE INDEX IF NOT EXISTS idx_products_type ON products(product_type)")
@@ -62,7 +74,7 @@ def init_db():
     
     conn.commit()
     conn.close()
-    print("✅ DB initialized at", DB_PATH)
+    print("✅ DB initialized at", database.DB_PATH)
 
 if __name__ == "__main__":
     init_db()

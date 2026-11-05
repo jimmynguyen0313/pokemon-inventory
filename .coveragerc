@@ -1,0 +1,6 @@
+[run]
+source = backend
+# Tests and the benchmark script are developer tools, not application code.
+omit =
+    backend/tests/*
+    backend/benchmark.py

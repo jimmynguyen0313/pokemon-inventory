@@ -1,187 +1,154 @@
-# 🔴 Pokemon Inventory Management System
+# Sealed Inventory: Pokémon TCG portfolio tracker
 
-A full-stack web application for managing and tracking your Pokemon sealed product collection with real-time market valuations.
+A full-stack app for tracking a sealed Pokémon TCG collection: what you paid, what it's worth today, and how its value has changed over time.
 
-![React](https://img.shields.io/badge/React-19-blue.svg)
-![FastAPI](https://img.shields.io/badge/FastAPI-Latest-green.svg)
-![SQLite](https://img.shields.io/badge/SQLite-3-orange.svg)
-![Pokemon](https://img.shields.io/badge/Pokemon-TCG-yellow.svg)
+**[🔗 Live demo](https://jimmynguyen0313.github.io/pokemon-inventory)** · the API runs on a free tier, so the first load can take about 30 seconds. The demo starts with a sample collection and illustrative prices.
 
-**[🔗 Live Demo](https://jimmynguyen0313.github.io/pokemon-inventory)** · the API runs on a free tier, so the first load can take about 30 seconds
+![Dashboard with portfolio totals and value-over-time chart](docs/dashboard.webp)
 
-## ✨ Features
+## Highlights
 
-- **📦 Product Search**: Find Pokemon booster boxes, elite trainer boxes, and sealed products
-- **💰 Real-time Valuations**: Get current market prices from Pokemon Price Tracker API
-- **📊 Portfolio Tracking**: Monitor your collection's total value and individual item performance
-- **🏷️ Category Management**: Organize inventory with custom categories
-- **➕ Easy Add/Remove**: Quickly add items with purchase price, quantity, and dates
-- **🗑️ Item Management**: Delete items with confirmation to keep inventory clean
-- **📱 Responsive Design**: Works great on desktop and mobile devices
+| | |
+|---|---|
+| **Portfolio analytics** | Market value, cost basis, unrealized gain/loss, return per item, allocation by type and set, top movers |
+| **Value over time** | Monthly portfolio value vs. cost basis over 6 months, 1 year or 2 years, from a per-product price history |
+| **Fast at scale** | Analytics endpoints answer in **~20 ms** with 10,000 holdings: **4× faster** history and **2.7× faster** holdings list after optimization ([benchmark](#performance)) |
+| **Tested** | **35 backend tests at 99% coverage** and **11 frontend tests at 90% line coverage**, run in CI on every push |
+| **Lighthouse** | **100** for Performance, Accessibility, Best Practices and SEO, on desktop and mobile |
 
-## 🚀 Tech Stack
+![Allocation, top movers and sortable holdings table](docs/holdings.webp)
 
-### Frontend
-- **React 19** - Modern UI framework
-- **Create React App** - Zero-config setup
-- **CSS3** - Custom styling with grid layouts
-- **Fetch API** - REST API communication
+## Features
 
-### Backend
-- **FastAPI** - High-performance Python web framework
-- **SQLite** - Lightweight, optimized database
-- **Pydantic** - Data validation and serialization
-- **Uvicorn** - Lightning-fast ASGI server
+- **Dashboard**: summary cards, an interactive value chart with hover details, allocation by product type or set, and top gainers and decliners.
+- **Holdings table**: sort by any column, filter as you type, with gain and return per item. On phones it becomes stacked cards.
+- **Add items**: a dialog that searches the catalog and prefills the market price. Set quantity, price paid, purchase date and category.
+- **Price sync**: pulls products and prices from the [Pokémon Price Tracker API](https://www.pokemonpricetracker.com/api). Each sync adds to the price history.
+- **Demo mode**: a fresh database gets 15 products, 24 months of price history and an 11-item sample collection, so the live demo is never empty.
 
-### External APIs
-- **Pokemon Price Tracker API** - Real-time market pricing data
+## Tech stack
 
-## 🛠️ Installation & Setup
+- **Frontend:** React 19, hand-built SVG charts (no chart library), CSS
+- **Backend:** FastAPI, SQLite, Pydantic
+- **Testing:** pytest + pytest-cov, Jest + React Testing Library
+- **CI/CD:** GitHub Actions; frontend on GitHub Pages, API on Render
 
-### Prerequisites
-- **Node.js** (v14 or higher)
-- **Python** (3.8 or higher)
-- **Pokemon Price Tracker API Key** ([Get free key](https://www.pokemonpricetracker.com/api))
+## Performance
 
-### 1. Clone the Repository
+`python -m backend.benchmark` builds a throwaway database with 10,000 holdings and 24 months of price history, then times each endpoint in-process (50 runs each).
+
+| Endpoint | Before p50 | After p50 | Speedup |
+|---|---|---|---|
+| `GET /analytics/history?months=24` | 74 ms | 19 ms | **~4×** |
+| `GET /items` | 308 ms | 112 ms | **2.7×** |
+| `GET /analytics/summary` | 43 ms | 19–26 ms | **~2×** |
+
+What changed:
+- **Aggregation moved into SQLite.** Totals, allocation and top movers use `SUM`, `GROUP BY` and `ORDER BY … LIMIT` instead of looping over rows in Python.
+- **History groups holdings first.** Holdings are grouped by product and purchase month before valuing them at each date, which cuts 10,000 rows to a few hundred groups. Each group's price on a date is found by binary search over its price history.
+- **`/items` skips FastAPI's per-field encoder.** Its rows are already JSON-safe, and the encoder dominated response time.
+
+A comparison script confirmed the optimized analytics return the same results as the original implementation. Numbers vary by machine.
+
+## Running locally
+
+From the project root:
+
 ```bash
-git clone https://github.com/jimmynguyen0313/pokemon-inventory.git
-cd pokemon-inventory
-```
-
-### 2. Backend Setup
-Run these from the project root:
-```bash
-# Create virtual environment (recommended)
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-
-# Install Python dependencies
 pip install -r backend/requirements.txt
-
-# (Optional) Set your API key to sync live prices
-export POKEMON_PRICE_TRACKER_API_KEY=your_api_key_here
-# On Windows: set POKEMON_PRICE_TRACKER_API_KEY=your_api_key_here
-
-# Start the backend server
-# (creates the database and seeds sample products on first run)
-python -m uvicorn backend.app:app --host 127.0.0.1 --port 8000 --reload
-
-# (Optional) Pull more products from the Price Tracker API
-python -m backend.sync_products --limit 50
+python -m uvicorn backend.app:app --reload --port 8000
 ```
 
-### 3. Frontend Setup
+In a second terminal:
+
 ```bash
-# In a new terminal, from the project root
-
-# Install Node.js dependencies
 npm install
-
-# Start the development server
 npm start
 ```
 
-### 4. Open the Application
-Visit **http://localhost:3000** in your browser!
+Then open http://localhost:3000. On first run the API creates `backend/inventory.db` with the demo collection. Set `DEMO_DATA=0` to start empty.
 
-## 📖 Usage
+To sync real products and prices, set `POKEMON_PRICE_TRACKER_API_KEY` and run:
 
-1. **Search Products**: Use the search bar to find Pokemon sealed products
-2. **Add to Inventory**: Click on a product, enter quantity and purchase price, select category
-3. **View Portfolio**: See your total collection value and individual item details
-4. **Manage Items**: Delete items you no longer own using the delete button
-5. **Track Performance**: Compare purchase prices with current market values
-
-## 🏗️ Project Structure
-
-```
-pokemon-inventory/
-├── backend/                 # FastAPI backend
-│   ├── app.py              # Main FastAPI application
-│   ├── models.py           # Pydantic data models
-│   ├── database.py         # SQLite connection management
-│   ├── pokemon_api.py      # External API client
-│   ├── db_init.py          # Schema creation
-│   ├── seed_products.py    # Sample product data
-│   └── requirements.txt    # Python dependencies
-├── src/                    # React frontend
-│   ├── components/         # Reusable UI components
-│   ├── App.js             # Main application component
-│   └── index.js           # Application entry point
-├── public/                 # Static assets
-├── render.yaml             # Render deployment config
-└── .github/
-    ├── workflows/          # GitHub Pages deploy
-    └── copilot-instructions.md  # AI assistant guidelines
+```bash
+python -m backend.sync_products --limit 50
 ```
 
-## 🗄️ Database Schema
+## Testing
 
-The application uses an optimized SQLite database with:
+```bash
+pip install -r backend/requirements-dev.txt
+pytest backend/tests --cov
+```
 
-- **Products Table**: Cached Pokemon product data with market prices
-- **Items Table**: Your personal inventory with purchase history
-- **Categories Table**: Custom organization categories
-- **Optimized Indexes**: Fast search and aggregation queries
+```bash
+npm test -- --watchAll=false --coverage
+```
 
-## 🔌 API Endpoints
+```bash
+python -m backend.benchmark --items 10000
+```
 
-### Backend (Port 8000)
-- `GET /products/search` - Search cached products
-- `GET /items` - Get user inventory
-- `POST /items` - Add item to inventory
-- `DELETE /items/{id}` - Remove item from inventory
-- `GET /categories` - List categories
-- `POST /categories` - Create new category
-- `GET /total-value` - Calculate portfolio value
+The backend tests run against a temporary database, with the pricing API faked out, so they need neither a network connection nor an API key.
 
-## 🤝 Contributing
+## API
 
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+| Method | Path | Description |
+|---|---|---|
+| `GET` | `/analytics/summary` | Totals, gain/loss, allocation, top movers |
+| `GET` | `/analytics/history?months=12` | Portfolio value and cost basis at the start of each month (2–60) |
+| `GET` | `/items` | Holdings with cost basis, value, gain and return |
+| `POST` | `/items` | Add a holding |
+| `DELETE` | `/items/{id}` | Remove a holding |
+| `GET` | `/products/search?name=` | Search the cached catalog |
+| `GET` | `/products/{id}/history` | Recorded prices for one product |
+| `POST` | `/products/sync` | Sync products and prices from the pricing API |
+| `GET`/`POST` | `/categories` | List or create categories |
 
-## 📝 Environment Variables
+Interactive docs are at `/docs` when the API is running.
 
-See [`.env.example`](.env.example) for the full list.
+## Project structure
+
+```
+backend/
+  app.py              FastAPI routes
+  analytics.py        Portfolio summary and value-over-time
+  db_init.py          Schema: products, items, categories, price_history
+  demo_data.py        Sample collection and price history for the demo
+  pokemon_api.py      Pricing API client
+  benchmark.py        Latency benchmark
+  tests/              pytest suite
+src/
+  App.js              Page layout and data loading
+  api.js, format.js   API client and number formatting
+  components/         StatCards, ValueChart, Breakdown, HoldingsTable, AddItemDialog, ProductThumb
+.github/workflows/    CI (tests) and GitHub Pages deploy
+render.yaml           Render deployment config
+```
+
+## Configuration
 
 | Variable | Used by | Default | Purpose |
 |---|---|---|---|
-| `REACT_APP_API_URL` | Frontend (build time) | `http://localhost:8000` | URL of the FastAPI backend |
-| `ALLOWED_ORIGINS` | Backend | `http://localhost:3000` | Comma-separated frontend origins allowed by CORS |
-| `DATABASE_PATH` | Backend | `backend/inventory.db` | Location of the SQLite file |
-| `POKEMON_PRICE_TRACKER_API_KEY` | Backend | — | Only needed to sync live prices |
+| `REACT_APP_API_URL` | Frontend (build time) | `http://localhost:8000` | URL of the API |
+| `ALLOWED_ORIGINS` | Backend | `http://localhost:3000` | Comma-separated origins allowed by CORS |
+| `DATABASE_PATH` | Backend | `backend/inventory.db` | SQLite file location |
+| `DEMO_DATA` | Backend | `1` | Seed the sample collection into a new database |
+| `POKEMON_PRICE_TRACKER_API_KEY` | Backend | none | Only needed to sync real prices |
 
-The backend reads these from the process environment (it does not load a `.env` file), so `export` them in your shell or set them in your hosting provider's dashboard.
-
-## 🚀 Deployment
-
-The frontend is hosted on **GitHub Pages** and the API on **Render**'s free tier.
+## Deployment
 
 ### Backend (Render)
-1. In Render, choose **New → Blueprint** and select this repo. It reads [`render.yaml`](render.yaml).
-2. When the service is live, copy its URL (e.g. `https://pokemon-inventory-api.onrender.com`).
+1. In Render, choose **New → Blueprint** and select this repo; it reads [`render.yaml`](render.yaml). Or create a web service with start command `uvicorn backend.app:app --host 0.0.0.0 --port $PORT`.
+2. Set `ALLOWED_ORIGINS` to the frontend URL.
 
-On startup the API creates the database and seeds sample products. Render's free disk is ephemeral, so inventory data resets on each deploy or restart. Free services also sleep after 15 minutes of inactivity, so the first request can take about 30 seconds.
+Render's free disk is ephemeral, so the demo collection is recreated on each deploy or restart.
 
 ### Frontend (GitHub Pages)
-1. In the repo, go to **Settings → Pages** and set **Source** to **GitHub Actions**.
-2. Go to **Settings → Secrets and variables → Actions → Variables** and add `REACT_APP_API_URL` with the Render URL.
-3. Push to `main` (or run the workflow manually). [`deploy-pages.yml`](.github/workflows/deploy-pages.yml) runs the tests, builds and publishes to `https://jimmynguyen0313.github.io/pokemon-inventory`.
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 🙏 Acknowledgments
-
-- [Pokemon Price Tracker](https://www.pokemonpricetracker.com/) for market data
-- [Create React App](https://create-react-app.dev/) for the frontend setup
-- [FastAPI](https://fastapi.tiangolo.com/) for the amazing Python framework
+1. In **Settings → Pages**, set **Source** to **GitHub Actions**.
+2. In **Settings → Secrets and variables → Actions → Variables**, add `REACT_APP_API_URL` with the API URL.
+3. Push to `main`. [`deploy-pages.yml`](.github/workflows/deploy-pages.yml) tests, builds and publishes the site.
 
 ---
 
-**Disclaimer**: Pokemon is a trademark of The Pokémon Company International. This project is not affiliated with or endorsed by The Pokémon Company.
+Pokémon is a trademark of The Pokémon Company International. This project is not affiliated with or endorsed by it. Demo prices are illustrative, not market data.

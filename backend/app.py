@@ -1,10 +1,12 @@
 from fastapi import FastAPI, Query, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from backend.models import ItemCreate, ProductCreate, CategoryCreate, Category
 from backend.database import get_db
 from backend.pokemon_api import fetch_products, get_product_by_id, sync_products_to_db
 from backend.db_init import init_db
 from backend.seed_products import seed_db
+from backend import analytics, demo_data
 from contextlib import asynccontextmanager
 from datetime import datetime
 import os
@@ -19,6 +21,8 @@ async def lifespan(app: FastAPI):
     conn.close()
     if product_count == 0:
         seed_db()
+        if demo_data.enabled():
+            demo_data.seed_demo()
     yield
 
 app = FastAPI(title="Pokemon Sealed Inventory API", lifespan=lifespan)
@@ -64,6 +68,17 @@ def search_products(name: str = Query(""), product_type: str = Query("")):
     query += " ORDER BY name LIMIT 50"
     
     rows = conn.execute(query, params).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+@app.get("/products/{product_id}/history")
+def product_history(product_id: str):
+    """Recorded market prices for one product, oldest first."""
+    conn = get_db()
+    rows = conn.execute(
+        "SELECT recorded_on AS date, market_value FROM price_history WHERE product_id = ? ORDER BY recorded_on",
+        (product_id,),
+    ).fetchall()
     conn.close()
     return [dict(r) for r in rows]
 
@@ -116,7 +131,8 @@ def add_item(item: ItemCreate):
     cur.execute("""
         INSERT INTO items (product_id, category_id, quantity, purchase_price, purchase_date)
         VALUES (?, ?, ?, ?, COALESCE(?, CURRENT_DATE))
-    """, (item.product_id, item.category_id, item.quantity, item.purchase_price, item.purchase_date))
+    """, (item.product_id, item.category_id, item.quantity, item.purchase_price,
+          item.purchase_date.isoformat() if item.purchase_date else None))
     conn.commit()
     item_id = cur.lastrowid
     conn.close()
@@ -130,14 +146,22 @@ def get_items():
         SELECT i.id, i.product_id, i.category_id, i.quantity, i.purchase_price, i.purchase_date,
                i.created_at, i.updated_at,
                p.name, p.product_type, p.market_value, p.images_url, p.set_name,
-               c.name AS category_name
+               c.name AS category_name,
+               ROUND(i.purchase_price * i.quantity, 2) AS cost_basis,
+               ROUND(COALESCE(p.market_value, i.purchase_price) * i.quantity, 2) AS market_total,
+               ROUND((COALESCE(p.market_value, i.purchase_price) - i.purchase_price) * i.quantity, 2) AS gain,
+               CASE WHEN i.purchase_price > 0
+                    THEN ROUND((COALESCE(p.market_value, i.purchase_price) - i.purchase_price) * 100.0 / i.purchase_price, 2)
+               END AS gain_pct
         FROM items i
         LEFT JOIN products p ON i.product_id = p.id
         LEFT JOIN categories c ON i.category_id = c.id
         ORDER BY i.purchase_date DESC, i.id DESC
     """).fetchall()
     conn.close()
-    return [dict(r) for r in rows]
+    # Rows are already JSON-safe (str/int/float/None), so skip FastAPI's per-field
+    # jsonable_encoder pass, which dominates response time for large collections.
+    return JSONResponse([dict(r) for r in rows])
 
 @app.delete("/items/{item_id}")
 def delete_item(item_id: int):
@@ -188,16 +212,22 @@ def list_categories():
     conn.close()
     return [dict(r) for r in rows]
 
-@app.get("/total-value")
-def total_value():
-    """Calculate total collection value based on market prices."""
-    conn = get_db()
-    r = conn.execute("""
-        SELECT SUM((COALESCE(p.market_value, i.purchase_price) * i.quantity)) AS total
-        FROM items i
-        LEFT JOIN products p ON i.product_id = p.id
-    """).fetchone()
-    conn.close()
-    total = r["total"] if r["total"] is not None else 0
-    return {"total_value": float(total)}
+# ============ Analytics Endpoints ============
 
+@app.get("/analytics/summary")
+def analytics_summary():
+    """Totals, unrealized gain/loss, allocation and top movers."""
+    conn = get_db()
+    try:
+        return analytics.summary(conn)
+    finally:
+        conn.close()
+
+@app.get("/analytics/history")
+def analytics_history(months: int = Query(12, ge=2, le=60)):
+    """Portfolio market value and cost basis at the start of each month."""
+    conn = get_db()
+    try:
+        return analytics.history(conn, months)
+    finally:
+        conn.close()

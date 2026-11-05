@@ -149,6 +149,12 @@ def sync_products_to_db(conn, limit: int = 100) -> int:
                 product.get("releaseDate", ""),
                 now,
             ))
+            market = product.get("prices", {}).get("market")
+            if market is not None:
+                cursor.execute(
+                    "INSERT OR REPLACE INTO price_history (product_id, recorded_on, market_value) VALUES (?, ?, ?)",
+                    (str(product.get("id")), now[:10], market),
+                )
             synced_count += 1
         
         conn.commit()
